@@ -319,3 +319,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   palette:
   - {fileID: 11400000, guid: 0ebb5be073d02864199bafa2c7fca03f, type: 2}
+  - {fileID: 11400000, guid: 0acb3d854d3926444a4bd2cb07a3b929, type: 2}

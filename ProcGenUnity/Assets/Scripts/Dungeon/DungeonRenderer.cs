@@ -27,21 +27,43 @@ public class DungeonRenderer : MonoBehaviour
             
             Dungeon dungeon = dGen.NewDungeon();
             DrawRooms(dungeon);
+            DrawConnections(dungeon);
+
         }
     }
 
     void DrawRooms(Dungeon dungeon) {
-        foreach (Room room in dungeon.rooms) {
+        foreach (Room room in dungeon.rooms.Values) {
             GameObject newMap = new GameObject();
             tilemaps.Add(newMap);
             newMap.transform.parent = grid.gameObject.transform;
             newMap.AddComponent<Tilemap>();
             newMap.AddComponent<TilemapRenderer>();
             newMap.name = room.position.ToString();
+            newMap.layer = 1;
 
             for (int x = room.position.x; x < room.position.x+room.area.x; x++) {
                 for (int y = room.position.y; y < room.position.y+room.area.y; y++) {
                     newMap.GetComponent<Tilemap>().SetTile(new Vector3Int(x, y, 0), palette[0]);
+                }
+            }
+        }
+    }
+
+    void DrawConnections(Dungeon dungeon) {
+        Debug.Log(dungeon.connections.Count);
+        foreach (Connection c in dungeon.connections) {
+             GameObject newMap = new GameObject();
+            tilemaps.Add(newMap);
+            newMap.transform.parent = grid.gameObject.transform;
+            newMap.AddComponent<Tilemap>();
+            newMap.AddComponent<TilemapRenderer>();
+            newMap.name = c.start.ToString() + " " + c.end.ToString();
+            newMap.layer = 2;
+            
+            for (int x = c.start.x; x <= c.end.x; x++) {
+                for (int y = c.start.y; y <= c.end.y; y++) {
+                    newMap.GetComponent<Tilemap>().SetTile(new Vector3Int(x, y, 0), palette[1]);
                 }
             }
         }

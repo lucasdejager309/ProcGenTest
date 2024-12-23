@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
@@ -23,8 +24,6 @@ public class BSPRenderer : MonoBehaviour
             Reset();
             BSPTree tree = BSPTree.NewTree(iterations, size, maxWidthHeightFactor, partitionVariation);
             DrawPartitions(tree.leafs);
-
-            Debug.Log(tree.nodes[1].position + " " + tree.nodes[1].GetSibling().position + " " + tree.nodes[1].GetSibling().size);
         }
     }
 

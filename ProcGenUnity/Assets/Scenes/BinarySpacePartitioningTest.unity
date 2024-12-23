@@ -133,7 +133,6 @@ GameObject:
   m_Component:
   - component: {fileID: 289954764}
   - component: {fileID: 289954765}
-  - component: {fileID: 289954766}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -175,23 +174,6 @@ MonoBehaviour:
   size: {x: 100, y: 100}
   maxWidthHeightFactor: 1.2
   partitionVariation: 0.125
---- !u!114 &289954766
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 289954762}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2dfb8d9e81299144a3cdb7e6324ac2b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  iterations: 1
-  size: {x: 100, y: 100}
-  maxWidthHeightFactor: 1.2
-  partitionVariation: 0.125
-  roomSize: 0.8
 --- !u!1 &555223434
 GameObject:
   m_ObjectHideFlags: 0
