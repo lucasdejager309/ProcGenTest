@@ -36,9 +36,9 @@ public class CARenderer : MonoBehaviour
         //SHOWAREAS
         if (Input.GetKeyDown(KeyCode.A)) {
             
-            List<Vector2Int> largest = ca.largest[1];
+            Area largest = ca.largest[1];
             
-            foreach (List<Vector2Int> area in ca.connectedAreas[1]) {
+            foreach (Area area in ca.areas[1]) {
                 if (area == largest) continue;
 
                 GameObject newMap = new GameObject();
@@ -48,7 +48,7 @@ public class CARenderer : MonoBehaviour
                 newMap.AddComponent<TilemapRenderer>();
                 
 
-                foreach (Vector2Int v in area) {
+                foreach (Vector2Int v in area.positions) {
                     newMap.GetComponent<Tilemap>().SetTile(new Vector3Int(v.x, v.y, 0), palette[2]);
                 }
             }

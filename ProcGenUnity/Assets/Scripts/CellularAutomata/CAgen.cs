@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using UnityEngine;
 
 public class CAGen
@@ -8,17 +9,18 @@ public class CAGen
     public int[,] cellularAutomata {get; private set;}
     public Vector2Int size;
 
-    public Dictionary<int, List<List<Vector2Int>>> connectedAreas {get; private set;}
-    public Dictionary<int, List<Vector2Int>> largest {get; private set;} = null;
+    public Dictionary<int, List<Area>> areas {get; private set;} = new Dictionary<int, List<Area>>();
+    public Dictionary<int, Area> largest {get; private set;} = new Dictionary<int, Area>();
 
     public CAGen(Vector2Int size, int neighboursRequired, float fillPercent, int steps, int border = 0, bool removeSmallRooms = false, bool largestSizeRequired = false, float minlargestSizeRequired = 0f) {
         this.size = size;
 
         bool foundGood = false;
         
+        int tries = 0;
         while (!foundGood) {
-            connectedAreas = null;
-            largest = null;
+            areas.Clear();
+            largest.Clear();
 
             cellularAutomata = new int[size.x, size.y];
             for (int x = 0+border; x < size.x-border; x++) {
@@ -31,32 +33,36 @@ public class CAGen
                 Step(neighboursRequired, size);
             }
 
-            connectedAreas = new Dictionary<int, List<List<Vector2Int>>>();
-            largest = new Dictionary<int, List<Vector2Int>>();
-            GetConnectedAreas(1);
-            GetLargest(1);
-
-            if (!largestSizeRequired) foundGood = true;
             
-            else if ((float)largest[1].Count/(float)(size.x*size.y) >= minlargestSizeRequired) {
-                foundGood = true;
-            }
-        }
+            List<Area> cAreas = GetConnectedAreas(1);
 
-        if (removeSmallRooms) {
-            foreach (List<Vector2Int> area in connectedAreas[1]) {
-                if (area != largest[1]) {
-                    foreach (Vector2Int v in area) {
-                        cellularAutomata[v.x, v.y] = 0;
-                    }
+            if (cAreas.Count > 0) {
+                largest.Add(1, Area.GetLargest(cAreas));
+
+                if (!largestSizeRequired || (float)largest[1].size/(float)(size.x*size.y) >= minlargestSizeRequired) {
+                    areas.Add(1, cAreas);
+                    
+                    foundGood = true;
                 }
             }
-
-            connectedAreas[1].Clear();
-            connectedAreas[1].Add(largest[1]);
+            tries++;
         }
 
-        //Debug.Log((float)GetLargest(1).Count/(float)(size.x*size.y) + " " + minlargestSizeRequired);
+        // Debug.Log("CA TRIES: " + tries);
+
+        if (removeSmallRooms) {
+            foreach (Area a in areas[1]) {
+                    if (a != largest[1]) {
+                        foreach (Vector2Int v in a.positions) {
+                            cellularAutomata[v.x, v.y] = 0;
+                        }
+                    }
+            }
+
+            areas.Remove(1);
+            areas.Add(1, new List<Area>());
+            areas[1].Add(largest[1]);
+        }
     }
 
     void Step(int neighboursRequired, Vector2Int size) {
@@ -101,40 +107,34 @@ public class CAGen
         return neighbours;
     }
 
-    List<List<Vector2Int>> GetConnectedAreas(int value) {
-        if (!connectedAreas.ContainsKey(value)) {
-            connectedAreas.Add(value, new List<List<Vector2Int>>());
-            
-            List<Vector2Int> tilesVisited = new List<Vector2Int>();
-        
-            List<Vector2Int> tilesToCheck = new List<Vector2Int>();
-            for (int x = 0; x < size.x; x++) {
-                for (int y = 0; y < size.y; y++) {
-                    if (cellularAutomata[x,y] == value) {
-                        tilesToCheck.Add(new Vector2Int(x,y));
-                    }
-                }
-            }
-            
-            
-            for (int x = 0; x < cellularAutomata.GetLength(0); x++) {
-                for (int y = 0; y < cellularAutomata.GetLength(1); y++) {
-                    if (tilesVisited.Contains(new Vector2Int(x,y))) continue; //if visited
-                    if (!tilesToCheck.Contains(new Vector2Int(x,y))) continue; //if not to check
+    List<Area> GetConnectedAreas(int value) {
+        List<Area> areasToReturn = new List<Area>();
+        List<Vector2Int> tilesVisited = new List<Vector2Int>();
 
-                    List<Vector2Int> fill = FloodFill(x, y, cellularAutomata, value);
-                    
-                    if (!connectedAreas.ContainsKey(value)) connectedAreas.Add(value, new List<List<Vector2Int>>());
-                    connectedAreas[value].Add(fill);
-
-                    foreach(Vector2Int v in fill) {
-                        tilesVisited.Add(v);
-                    }
+        Queue<Vector2Int> tileQueue = new Queue<Vector2Int>();
+        for (int x = 0; x < size.x; x++) {
+            for (int y = 0; y < size.y; y++) {
+                if (cellularAutomata[x,y] == value) {
+                    tileQueue.Enqueue(new Vector2Int(x,y));
                 }
             }
         }
+
+        while (tileQueue.Count > 0) {
+            Vector2Int pos = tileQueue.Dequeue();
+
+            if (!tilesVisited.Contains(pos)) {
+                List<Vector2Int> fill = FloodFill(pos.x, pos.y, cellularAutomata, value);
+                foreach (Vector2Int v in fill) {
+                    tilesVisited.Add(v);
+                }
+
+                areasToReturn.Add(new Area(value, fill));
+            }
+    
+        }
         
-        return connectedAreas[value];
+        return areasToReturn;
     }
 
     List<Vector2Int> FloodFill(int x, int y, int[,] data, int value) {
@@ -168,44 +168,68 @@ public class CAGen
     public bool IsInBounds(int x, int y) {
         return (x >= 0 && y >= 0 && x < size.x && y < size.y);
     }
+}
 
-    List<Vector2Int> GetLargest(int value) {
-        if (!largest.ContainsKey(value)) {
-            Debug.Log(connectedAreas[value].Count);
-            foreach (List<Vector2Int> list in connectedAreas[value]) {
-                
-                if (!largest.ContainsKey(value)) {
-                        largest.Add(value, list);
+public class Area
+{
+    public int value { get; private set; }
+    public List<Vector2Int> positions { get; private set; } = new List<Vector2Int>();
+    public int size { get { return positions.Count; } }
+    public Dictionary<Vector2Int, List<Vector2Int>> edge { get; private set; } = new Dictionary<Vector2Int, List<Vector2Int>>(); //facing, positions list
+
+    public Area(int value, List<Vector2Int> positions) {
+        this.value = value;
+        this.positions = positions;
+        GetEdge();
+    }
+
+    void GetEdge() {
+        foreach (Vector2Int pos in positions) {
+            List<Vector2Int> neighbours = GetNeighbours(pos);
+            if (neighbours.Count < 8) {
+                List<Vector2Int> facings = new List<Vector2Int>();
+
+                for (int x = -1; x <= 1; x++) {
+                    for (int y = -1; y <= 1; y++) {
+                        if (x != 0 && y != 0 && !neighbours.Contains(new Vector2Int(pos.x + x, pos.y + y))) {
+                            facings.Add(new Vector2Int(pos.x + x, pos.y + y));
+                        }
+                    }
                 }
 
-                else if (list.Count > largest[value].Count) {
-                    largest[value] = list;
+                edge.Add(pos, facings);
+            }
+        }
+    }
+
+    List<Vector2Int> GetNeighbours(Vector2Int position) {
+        List<Vector2Int> neighbours = new List<Vector2Int>();
+        for (int x = -1; x <= 1; x++) {
+            for (int y = -1; y <= 1; y++) {
+                if (x != 0 && y != 0 && positions.Contains(new Vector2Int(x, y))) {
+                    neighbours.Add(new Vector2Int(x, y));
                 }
             }
-            
-            return largest[value];
-
-        } else {
-            return largest[value];
         }
 
+        return neighbours;
     }
 
-    // List<Vector2Int> GetEdgeTiles(int value) {
+    static public Area GetLargest(List<Area> areasToCheck) {
+        Area largest;
+        largest = areasToCheck[0];
 
-    // }
-
-    public class Area {
-        int value;
-        List<Vector2Int> positions;
-        public int size {get {return positions.Count;}}
-        Dictionary<Vector2Int, Vector2Int> edge; //position, facing
-
-        public Area(int value, List<Vector2Int> positions) {
-            this.value = value;
-            this.positions = positions;
+        foreach (Area area in areasToCheck){
+            if (area.size > largest.size) {
+                largest = area;
+            }
         }
+
+        return largest;
+
     }
 }
+
+
 
 

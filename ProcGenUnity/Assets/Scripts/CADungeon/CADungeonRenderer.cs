@@ -21,11 +21,9 @@ public class CADungeonRenderer : MonoBehaviour
             caDungeonGen.NewDungeon();
 
             int[,] tiles = new int[caDungeonGen.size.x, caDungeonGen.size.y];
-            foreach (KeyValuePair<BSPNode, CAGen> room in caDungeonGen.rooms) {
-                for (int x = 0; x < room.Value.size.x; x++) {
-                    for (int y = 0; y < room.Value.size.y; y++) {
-                        tiles[x+room.Key.position.x, y+room.Key.position.y] = room.Value.cellularAutomata[x, y];
-                    }
+            foreach (KeyValuePair<BSPNode, Area> area in caDungeonGen.areas) {
+                foreach (Vector2Int v in area.Value.positions) {
+                    tiles[v.x+area.Key.position.x, v.y+area.Key.position.y] = area.Value.value;
                 }
             }
 

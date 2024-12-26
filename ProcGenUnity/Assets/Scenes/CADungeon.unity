@@ -298,16 +298,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fface885ddc527d4e9960867a654e4f6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  iterations: 3
-  size: {x: 50, y: 50}
-  maxWidthHeightFactor: 1.2
-  partitionVariation: 0.125
+  iterations: 5
+  size: {x: 100, y: 100}
+  maxWidthHeightFactor: 1
+  partitionVariation: 0.14
   neighboursRequired: 4
   fillPercent: 0.6
   border: 1
   steps: 8
-  largestSizeRequired: 0
-  minlargestSizeRequired: 0.4
+  largestSizeRequired: 1
+  minlargestSizeRequired: 0.35
   removeSmallRooms: 1
 --- !u!114 &1062136386
 MonoBehaviour:

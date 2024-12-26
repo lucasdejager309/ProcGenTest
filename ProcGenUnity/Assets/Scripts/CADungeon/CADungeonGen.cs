@@ -19,15 +19,16 @@ public class CADungeonGen : MonoBehaviour
     [Range(0,1)] [SerializeField] float minlargestSizeRequired = 0.4f;
     [SerializeField] bool removeSmallRooms = false;
 
-    public Dictionary<BSPNode, CAGen> rooms {get; private set;} = new Dictionary<BSPNode, CAGen>();
+    public Dictionary<BSPNode, Area> areas {get; private set;} = new Dictionary<BSPNode, Area>();
     public BSPTree tree {get; private set;} = null;
 
     public void NewDungeon() {
-        rooms.Clear();
+        areas.Clear();
         tree = new BSPTree(iterations, size, maxWidthHeightFactor, partitionVariation);
 
         foreach (BSPNode leaf in tree.leafs) {
-            rooms.Add(leaf, new CAGen(leaf.size, neighboursRequired, fillPercent, steps, border, removeSmallRooms, largestSizeRequired, minlargestSizeRequired));
+            CAGen area = new CAGen(leaf.size, neighboursRequired, fillPercent, steps, border, removeSmallRooms, largestSizeRequired, minlargestSizeRequired);
+            areas.Add(leaf, area.largest[1]);
         }
     }
 }
