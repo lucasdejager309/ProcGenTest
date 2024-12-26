@@ -20,7 +20,7 @@ public class DungeonGen : MonoBehaviour
 
     public Dungeon NewDungeon()
     {
-        BSPTree tree = BSPTree.NewTree(iterations, size, maxWidthHeightFactor, partitionVariation);
+        BSPTree tree = new BSPTree(iterations, size, maxWidthHeightFactor, partitionVariation);
         Dungeon dungeon = new Dungeon(tree);
 
         dungeon.PopulateWithRooms(randomRoomSize, minRoomSize, maxRoomSize, randomizeRoomPosition);

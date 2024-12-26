@@ -8,18 +8,17 @@ public class BSPTree {
     public List<BSPNode> nodes {get; private set;} = new List<BSPNode>(); //all nodes
     public Dictionary<KeyValuePair<BSPNode, BSPNode>, int> pairs = new Dictionary<KeyValuePair<BSPNode, BSPNode>, int>(); //siblings
 
-    static public BSPTree NewTree(int iterations, Vector2Int size, float maxWidthHeightFactor, float partitionVariation) {
-        BSPTree tree = new BSPTree();
-        tree.root = new BSPNode(null, size);
-        tree.root.SetDepth(0);
-        tree.leafs.Add(tree.root);
-        tree.nodes.Add(tree.root);
+    public BSPTree(int iterations, Vector2Int size, float maxWidthHeightFactor, float partitionVariation) {
+        root = new BSPNode(null, size);
+        root.SetDepth(0);
+        leafs.Add(root);
+        nodes.Add(root);
 
         int currentIterations = 0;
 
         while (currentIterations < iterations) {
-            List<BSPNode> leafsToSplit = new List<BSPNode>(tree.leafs);
-            tree.leafs.Clear();
+            List<BSPNode> leafsToSplit = new List<BSPNode>(leafs);
+            leafs.Clear();
 
             foreach(BSPNode leaf in leafsToSplit) {
                 int orientation;  //0 is vertical split (along x axis), 1 is horizontal split (along y axis)
@@ -46,20 +45,18 @@ public class BSPTree {
                 BSPNode[] newLeafs = leaf.Split(orientation, splitPosition);
                 foreach (BSPNode newLeaf in newLeafs) {
                     newLeaf.SetDepth(currentIterations+1);
-                    tree.leafs.Add(newLeaf);
-                    tree.nodes.Add(newLeaf);
+                    leafs.Add(newLeaf);
+                    nodes.Add(newLeaf);
                 }
             }
 
             currentIterations++;
         }
 
-        tree.pairs = GetSiblingPairs(tree.nodes);
-        foreach (BSPNode n in tree.nodes) {
+        pairs = GetSiblingPairs(nodes);
+        foreach (BSPNode n in nodes) {
             n.GetLeafs();
         }
-
-        return tree;
     }
 
     static public Dictionary<KeyValuePair<BSPNode, BSPNode>, int> GetSiblingPairs(List<BSPNode> nodes) {

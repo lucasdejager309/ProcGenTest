@@ -406,7 +406,6 @@ GameObject:
   m_Component:
   - component: {fileID: 2010604360}
   - component: {fileID: 2010604359}
-  - component: {fileID: 2010604361}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -426,6 +425,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bfde65b4dc05463489284c8aec97459e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  size: {x: 100, y: 100}
+  neighboursRequired: 4
+  fillPercent: 0.525
+  border: 0
+  steps: 10
+  largestSizeRequired: 0
+  minlargestSizeRequired: 0.4
   palette:
   - {fileID: 11400000, guid: b3105ddf49e67e7409e7fab377319b4e, type: 2}
   - {fileID: 11400000, guid: 0ebb5be073d02864199bafa2c7fca03f, type: 2}
@@ -447,20 +453,3 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2010604361
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2010604358}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6b616a13b90be974595d2d0b0b88ed62, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  size: {x: 40, y: 10}
-  neighboursRequired: 4
-  fillPercent: 0.5
-  border: 0
-  steps: 10

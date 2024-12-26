@@ -22,7 +22,7 @@ public class BSPRenderer : MonoBehaviour
     void Update() {
         if (Input.GetKeyDown(KeyCode.Space)) {
             Reset();
-            BSPTree tree = BSPTree.NewTree(iterations, size, maxWidthHeightFactor, partitionVariation);
+            BSPTree tree = new BSPTree(iterations, size, maxWidthHeightFactor, partitionVariation);
             DrawPartitions(tree.leafs);
         }
     }

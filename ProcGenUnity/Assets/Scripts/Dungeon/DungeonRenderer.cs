@@ -51,7 +51,6 @@ public class DungeonRenderer : MonoBehaviour
     }
 
     void DrawConnections(Dungeon dungeon) {
-        Debug.Log(dungeon.connections.Count);
         foreach (Connection c in dungeon.connections) {
              GameObject newMap = new GameObject();
             tilemaps.Add(newMap);

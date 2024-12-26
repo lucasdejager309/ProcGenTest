@@ -1,30 +1,65 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
-public class CAgen : MonoBehaviour
+public class CAGen
 {
-    public int[,] cellularAutomata;
+    public int[,] cellularAutomata {get; private set;}
     public Vector2Int size;
-    [Range(1,9)] [SerializeField] int neighboursRequired;
-    [Range(0,1)] [SerializeField] float fillPercent = 0.5f;
-    [Range(0, 100)][SerializeField] int border = 0;
-    [Range(0,10)] [SerializeField] int steps = 3;
 
-    public void GetNew() {
-        cellularAutomata = new int[size.x, size.y];
-        for (int x = 0+border; x < size.x-border; x++) {
-            for (int y = 0+border; y < size.y-border; y++) {
-                cellularAutomata[x, y] = Random.value > fillPercent ? 0 : 1;
+    public Dictionary<int, List<List<Vector2Int>>> connectedAreas {get; private set;}
+    public Dictionary<int, List<Vector2Int>> largest {get; private set;} = null;
+
+    public CAGen(Vector2Int size, int neighboursRequired, float fillPercent, int steps, int border = 0, bool removeSmallRooms = false, bool largestSizeRequired = false, float minlargestSizeRequired = 0f) {
+        this.size = size;
+
+        bool foundGood = false;
+        
+        while (!foundGood) {
+            connectedAreas = null;
+            largest = null;
+
+            cellularAutomata = new int[size.x, size.y];
+            for (int x = 0+border; x < size.x-border; x++) {
+                for (int y = 0+border; y < size.y-border; y++) {
+                    cellularAutomata[x, y] = Random.value > fillPercent ? 0 : 1;
+                }
+            }
+
+            for (int i = 0; i < steps; i++) {
+                Step(neighboursRequired, size);
+            }
+
+            connectedAreas = new Dictionary<int, List<List<Vector2Int>>>();
+            largest = new Dictionary<int, List<Vector2Int>>();
+            GetConnectedAreas(1);
+            GetLargest(1);
+
+            if (!largestSizeRequired) foundGood = true;
+            
+            else if ((float)largest[1].Count/(float)(size.x*size.y) >= minlargestSizeRequired) {
+                foundGood = true;
             }
         }
 
-        for (int i = 0; i < steps; i++) {
-            Step();
+        if (removeSmallRooms) {
+            foreach (List<Vector2Int> area in connectedAreas[1]) {
+                if (area != largest[1]) {
+                    foreach (Vector2Int v in area) {
+                        cellularAutomata[v.x, v.y] = 0;
+                    }
+                }
+            }
+
+            connectedAreas[1].Clear();
+            connectedAreas[1].Add(largest[1]);
         }
+
+        //Debug.Log((float)GetLargest(1).Count/(float)(size.x*size.y) + " " + minlargestSizeRequired);
     }
 
-    void Step() {
+    void Step(int neighboursRequired, Vector2Int size) {
         int[,] caBuffer = new int[size.x, size.y];
 
         for (int x = 0; x < size.x; ++x) {
@@ -66,35 +101,40 @@ public class CAgen : MonoBehaviour
         return neighbours;
     }
 
-    public List<List<Vector2Int>> GetConnectedAreas(int value) {
-        List<List<Vector2Int>> connectedareas = new List<List<Vector2Int>>();
-        List<Vector2Int> tilesVisited = new List<Vector2Int>();
+    List<List<Vector2Int>> GetConnectedAreas(int value) {
+        if (!connectedAreas.ContainsKey(value)) {
+            connectedAreas.Add(value, new List<List<Vector2Int>>());
+            
+            List<Vector2Int> tilesVisited = new List<Vector2Int>();
         
-        List<Vector2Int> tilesToCheck = new List<Vector2Int>();
-        for (int x = 0; x < size.x; x++) {
-            for (int y = 0; y < size.y; y++) {
-                if (cellularAutomata[x,y] == value) {
-                    tilesToCheck.Add(new Vector2Int(x,y));
+            List<Vector2Int> tilesToCheck = new List<Vector2Int>();
+            for (int x = 0; x < size.x; x++) {
+                for (int y = 0; y < size.y; y++) {
+                    if (cellularAutomata[x,y] == value) {
+                        tilesToCheck.Add(new Vector2Int(x,y));
+                    }
+                }
+            }
+            
+            
+            for (int x = 0; x < cellularAutomata.GetLength(0); x++) {
+                for (int y = 0; y < cellularAutomata.GetLength(1); y++) {
+                    if (tilesVisited.Contains(new Vector2Int(x,y))) continue; //if visited
+                    if (!tilesToCheck.Contains(new Vector2Int(x,y))) continue; //if not to check
+
+                    List<Vector2Int> fill = FloodFill(x, y, cellularAutomata, value);
+                    
+                    if (!connectedAreas.ContainsKey(value)) connectedAreas.Add(value, new List<List<Vector2Int>>());
+                    connectedAreas[value].Add(fill);
+
+                    foreach(Vector2Int v in fill) {
+                        tilesVisited.Add(v);
+                    }
                 }
             }
         }
         
-        
-        for (int x = 0; x < cellularAutomata.GetLength(0); x++) {
-            for (int y = 0; y < cellularAutomata.GetLength(1); y++) {
-                if (tilesVisited.Contains(new Vector2Int(x,y))) continue; //if visited
-                if (!tilesToCheck.Contains(new Vector2Int(x,y))) continue; //if not to check
-
-                List<Vector2Int> fill = FloodFill(x, y, cellularAutomata, value);
-                connectedareas.Add(fill);
-
-                foreach(Vector2Int v in fill) {
-                    tilesVisited.Add(v);
-                }
-            }
-        }
-
-        return connectedareas;
+        return connectedAreas[value];
     }
 
     List<Vector2Int> FloodFill(int x, int y, int[,] data, int value) {
@@ -128,4 +168,44 @@ public class CAgen : MonoBehaviour
     public bool IsInBounds(int x, int y) {
         return (x >= 0 && y >= 0 && x < size.x && y < size.y);
     }
+
+    List<Vector2Int> GetLargest(int value) {
+        if (!largest.ContainsKey(value)) {
+            Debug.Log(connectedAreas[value].Count);
+            foreach (List<Vector2Int> list in connectedAreas[value]) {
+                
+                if (!largest.ContainsKey(value)) {
+                        largest.Add(value, list);
+                }
+
+                else if (list.Count > largest[value].Count) {
+                    largest[value] = list;
+                }
+            }
+            
+            return largest[value];
+
+        } else {
+            return largest[value];
+        }
+
+    }
+
+    // List<Vector2Int> GetEdgeTiles(int value) {
+
+    // }
+
+    public class Area {
+        int value;
+        List<Vector2Int> positions;
+        public int size {get {return positions.Count;}}
+        Dictionary<Vector2Int, Vector2Int> edge; //position, facing
+
+        public Area(int value, List<Vector2Int> positions) {
+            this.value = value;
+            this.positions = positions;
+        }
+    }
 }
+
+

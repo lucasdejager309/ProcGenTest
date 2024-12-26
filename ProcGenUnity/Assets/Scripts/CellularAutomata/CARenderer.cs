@@ -1,20 +1,26 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
 public class CARenderer : MonoBehaviour
 {
+    [SerializeField] Vector2Int size;
+    [Range(1,9)] [SerializeField] int neighboursRequired;
+    [Range(0,1)] [SerializeField] float fillPercent = 0.5f;
+    [Range(0, 100)][SerializeField] int border = 0;
+    [Range(0,10)] [SerializeField] int steps = 3;
+    [SerializeField] bool largestSizeRequired = false;
+    [Range(0,1)] [SerializeField] float minlargestSizeRequired = 0.4f;
+    [SerializeField] bool removeSmallRooms = false;
+
     public TileBase[] palette;
     public Tilemap map;
     List<GameObject> tempMaps = new List<GameObject>();
     
-    CAgen ca;
+    CAGen ca;
 
     void Start() {
-        ca = GetComponent<CAgen>();
         Reset();
         DrawTiles(ca.cellularAutomata);
     }
@@ -29,17 +35,10 @@ public class CARenderer : MonoBehaviour
 
         //SHOWAREAS
         if (Input.GetKeyDown(KeyCode.A)) {
-            List<List<Vector2Int>> connected = ca.GetConnectedAreas(1);
-
-            List<Vector2Int> largest = new List<Vector2Int>();
-
-            foreach (List<Vector2Int> list in connected) {
-                if (list.Count > largest.Count) {
-                    largest = list;
-                }
-            }
             
-            foreach (List<Vector2Int> area in connected) {
+            List<Vector2Int> largest = ca.largest[1];
+            
+            foreach (List<Vector2Int> area in ca.connectedAreas[1]) {
                 if (area == largest) continue;
 
                 GameObject newMap = new GameObject();
@@ -53,10 +52,6 @@ public class CARenderer : MonoBehaviour
                     newMap.GetComponent<Tilemap>().SetTile(new Vector3Int(v.x, v.y, 0), palette[2]);
                 }
             }
-
-            // foreach (Vector2Int tile in largest) {
-            //     DrawTile(tile, palette[2]);
-            // }
         }
     }
 
@@ -68,7 +63,7 @@ public class CARenderer : MonoBehaviour
         tempMaps.Clear();
         
 
-        ca.GetNew();
+        ca = new CAGen(size, neighboursRequired, fillPercent, steps, border, removeSmallRooms, largestSizeRequired, minlargestSizeRequired);
         map.ClearAllTiles();
     }
 
