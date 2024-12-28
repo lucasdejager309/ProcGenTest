@@ -22,9 +22,11 @@ public class CAGen
             areas.Clear();
             largest.Clear();
 
+            ///////////////////////
+
             cellularAutomata = new int[size.x, size.y];
-            for (int x = 0+border; x < size.x-border; x++) {
-                for (int y = 0+border; y < size.y-border; y++) {
+            for (int x = border; x < size.x-border; x++) {
+                for (int y = border; y < size.y-border; y++) {
                     cellularAutomata[x, y] = Random.value > fillPercent ? 0 : 1;
                 }
             }
@@ -33,6 +35,7 @@ public class CAGen
                 Step(neighboursRequired, size);
             }
 
+            /////////////////////////////
             
             List<Area> cAreas = GetConnectedAreas(1);
 
@@ -175,7 +178,16 @@ public class Area
     public int value { get; private set; }
     public List<Vector2Int> positions { get; private set; } = new List<Vector2Int>();
     public int size { get { return positions.Count; } }
+    
     public Dictionary<Vector2Int, List<Vector2Int>> edge { get; private set; } = new Dictionary<Vector2Int, List<Vector2Int>>(); //facing, positions list
+    
+    public Vector2Int boundsMin { get; private set; } = new Vector2Int(int.MaxValue, int.MaxValue);
+    public Vector2Int boundsMax { get; private set; } = new Vector2Int(0,0);
+    public Vector2Int dimensions { get 
+        {
+        return new Vector2Int(boundsMax.x-boundsMin.x, boundsMax.y-boundsMin.y);
+        }
+    }
 
     public Area(int value, List<Vector2Int> positions) {
         this.value = value;
@@ -187,17 +199,29 @@ public class Area
         foreach (Vector2Int pos in positions) {
             List<Vector2Int> neighbours = GetNeighbours(pos);
             if (neighbours.Count < 8) {
-                List<Vector2Int> facings = new List<Vector2Int>();
+
 
                 for (int x = -1; x <= 1; x++) {
                     for (int y = -1; y <= 1; y++) {
-                        if (x != 0 && y != 0 && !neighbours.Contains(new Vector2Int(pos.x + x, pos.y + y))) {
-                            facings.Add(new Vector2Int(pos.x + x, pos.y + y));
+    
+                        if (!(x == 0 && y == 0)) {
+                            if (!neighbours.Contains(new Vector2Int(pos.x + x, pos.y + y))) {
+
+                                if (edge.ContainsKey(new Vector2Int(x, y))) {
+                                    edge[new Vector2Int(x, y)].Add(pos);
+                                } else {
+                                    edge.Add(new Vector2Int(x, y), new List<Vector2Int>(){pos});
+                                }
+                            }
                         }
                     }
                 }
 
-                edge.Add(pos, facings);
+                if (boundsMin.x > pos.x) boundsMin = new Vector2Int(pos.x, boundsMin.y);
+                if (boundsMin.y > pos.y) boundsMin = new Vector2Int(boundsMin.x, pos.y);
+
+                if (boundsMax.x < pos.x) boundsMax = new Vector2Int(pos.x, boundsMax.y);
+                if (boundsMax.y < pos.y) boundsMax = new Vector2Int(boundsMax.x, pos.y);
             }
         }
     }
@@ -206,13 +230,47 @@ public class Area
         List<Vector2Int> neighbours = new List<Vector2Int>();
         for (int x = -1; x <= 1; x++) {
             for (int y = -1; y <= 1; y++) {
-                if (x != 0 && y != 0 && positions.Contains(new Vector2Int(x, y))) {
-                    neighbours.Add(new Vector2Int(x, y));
+                if (!(x == 0 && y == 0) && positions.Contains(new Vector2Int(position.x + x, position.y + y))) {
+                    neighbours.Add(new Vector2Int(position.x + x, position.y + y));
                 }
             }
         }
 
         return neighbours;
+    }
+
+    public List<Vector2Int> GetEdgeFacing(Vector2Int dir) {
+        List<Vector2Int> edgeToReturn = new List<Vector2Int>(edge[dir]);
+
+        foreach(Vector2Int v in edge[dir]) {
+            if (dir.x != 0) {
+                for (int x = v.x+dir.x; boundsMin.x < x && x < boundsMax.x; x += dir.x) {
+                    if (positions.Contains(new Vector2Int(x, v.y))) {
+                        edgeToReturn.Remove(v);
+                    }
+                }
+            }
+
+            if (dir.y != 0) {
+                for (int y = v.y+dir.y; boundsMin.y < y && y < boundsMax.y; y += dir.y) {
+                    if (positions.Contains(new Vector2Int(v.x, y))) {
+                        edgeToReturn.Remove(v);
+                    }
+                }
+            }
+        }
+
+        List<Vector2Int> tempList = new List<Vector2Int>();
+        foreach (Vector2Int e in edgeToReturn) {
+            foreach (Vector2Int v in GetNeighbours(e)) {
+                if (edgeToReturn.Contains(v)) {
+                    tempList.Add(e);
+                    break;
+                }
+            }
+        }
+
+        return tempList;
     }
 
     static public Area GetLargest(List<Area> areasToCheck) {

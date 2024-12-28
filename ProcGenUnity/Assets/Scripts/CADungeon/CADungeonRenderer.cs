@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
@@ -21,7 +22,7 @@ public class CADungeonRenderer : MonoBehaviour
             caDungeonGen.NewDungeon();
 
             int[,] tiles = new int[caDungeonGen.size.x, caDungeonGen.size.y];
-            foreach (KeyValuePair<BSPNode, Area> area in caDungeonGen.areas) {
+            foreach (KeyValuePair<BSPNode, Area> area in caDungeonGen.leafAreas) {
                 foreach (Vector2Int v in area.Value.positions) {
                     tiles[v.x+area.Key.position.x, v.y+area.Key.position.y] = area.Value.value;
                 }
